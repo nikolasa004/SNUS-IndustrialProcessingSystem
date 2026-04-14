@@ -1,0 +1,21 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build folders
+bin/
+obj/
+Debug/
+Release/
+
+# Logs and generated output
+*.log
+job_log.txt
+Reports/
+
+# Rider / ReSharper / misc
+_ReSharper*/
+*.DotSettings.user
