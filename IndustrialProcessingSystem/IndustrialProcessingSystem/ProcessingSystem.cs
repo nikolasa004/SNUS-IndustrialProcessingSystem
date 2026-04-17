@@ -26,7 +26,6 @@ namespace IndustrialProcessingSystem
 
         private volatile bool _running;
         private int _pendingCount;
-        private int _reportIndex;
 
         public ProcessingSystem(int workerCount, int maxQueueSize, string reportDirectory = "Reports")
         {
@@ -491,7 +490,6 @@ namespace IndustrialProcessingSystem
                 DateTime now = DateTime.Now;
 
                 var executedByType = snapshot
-                    .Where(r => r.Success)
                     .GroupBy(r => r.Type)
                     .OrderBy(g => g.Key.ToString())
                     .Select(g => new
@@ -548,11 +546,24 @@ namespace IndustrialProcessingSystem
                     )
                 );
 
-                string fileName = $"report_{_reportIndex % 10}.xml";
-                string fullPath = Path.Combine(_reportDirectory, fileName);
+                string fullPath;
+
+                string[] existingReports = Directory.GetFiles(_reportDirectory, "report_*.xml");
+
+                if (existingReports.Length < 10)
+                {
+                    int nextIndex = existingReports.Length;
+                    string fileName = $"report_{nextIndex}.xml";
+                    fullPath = Path.Combine(_reportDirectory, fileName);
+                }
+                else
+                {
+                    fullPath = existingReports
+                        .OrderBy(path => File.GetLastWriteTime(path))
+                        .First();
+                }
 
                 root.Save(fullPath);
-                _reportIndex++;
             }
             catch
             {
@@ -580,8 +591,7 @@ namespace IndustrialProcessingSystem
         private class InternalJobState
         {
             public JobHandle Handle { get; set; } = new JobHandle();
-            public TaskCompletionSource<int> CompletionSource { get; set; } =
-                new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+            public TaskCompletionSource<int> CompletionSource { get; set; } = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         private class JobExecutionRecord
